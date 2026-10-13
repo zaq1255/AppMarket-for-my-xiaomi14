@@ -119,7 +119,7 @@ fun MainPage(
     val appManagementSupported = uiPlatform.packageInstallationSupported
     val tabs = remember(appManagementSupported) {
         buildList {
-            add(MainTab.Today)
+             // add(MainTab.Today)  // 已移除首页
             if (appManagementSupported) add(MainTab.Updates)
             add(MainTab.Search)
             add(MainTab.Settings)
