@@ -390,7 +390,37 @@ class SearchViewModel(
         }
     }
 
-    fun installDownloaded(packageName: String) = downloads.install(packageName)
+        fun installDownloaded(packageName: String) {
+        viewModelScope.launch {
+            // 1. 执行静默安装
+            downloads.install(packageName)
+            
+            // 2. 延迟 800ms，等系统的安装广播和包管理器状态同步
+            kotlinx.coroutines.delay(800)
+            
+            // 3. 向系统查询该应用真实的安装版本号
+            val freshVersionCode = packages.freshInstalledVersionCode(packageName) ?: 0L
+            
+            if (freshVersionCode > 0L) {
+                // 4. 更新 UI 列表状态，让按钮变成“打开”
+                _uiState.update { state ->
+                    state.copy(
+                        results = state.results.map { item ->
+                            if (item.app.packageName == packageName) {
+                                val updatedApp = item.app.copy(
+                                    installedVersionCode = freshVersionCode
+                                )
+                                item.copy(
+                                    app = updatedApp,
+                                    actionKind = searchActionKind(updatedApp, freshVersionCode)
+                                )
+                            } else item
+                        }
+                    )
+                }
+            }
+        }
+    }
     fun cancelDownload(packageName: String) = downloads.cancel(packageName)
     fun clearDownload(packageName: String) = downloads.clear(packageName)
 
